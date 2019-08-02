@@ -15,7 +15,3 @@ Better details coming soon.
 To run, type enter:
 
 ```node bot.js```
-
-## License
-
-[MIT](https://choosealicense.com/licenses/mit/)
