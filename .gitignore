@@ -1,0 +1,5 @@
+.DS_Store
+config.json
+package-lock.json
+data/*
+db.sqlite

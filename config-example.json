@@ -1,0 +1,9 @@
+{
+    "identity": {
+        "username": "USERNAME",
+        "password": "OAUTH_KEY"
+    },
+    "channels": [
+        "CHANNEL_NAME"
+    ]
+}

@@ -1,0 +1,14 @@
+{
+    "name": "textbr",
+    "version": "0.1",
+    "description": "Text Battle Royale is a chat game for twitch.tv",
+    "main": "bot.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "sqlite3": "^4.0.9"
+    }
+}
