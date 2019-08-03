@@ -15,3 +15,6 @@ Better details coming soon.
 To run, type enter:
 
 ```node bot.js```
+
+To use the leaderboard overlay, create a new Browser Source in OBS and point it to:
+> http://localhost:8080
