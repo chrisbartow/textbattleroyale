@@ -5,5 +5,7 @@
     },
     "channels": [
         "CHANNEL_NAME"
-    ]
+    ],
+    "overlay":
+	true
 }
