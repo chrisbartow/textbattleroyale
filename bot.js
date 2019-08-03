@@ -1,14 +1,8 @@
-/*
-Text Battle Royale v0.1
-Written by Chris Bartow <chris@codenut.io>
-https://github.com/chrisbartow/textbattleroyale
-
-THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
-WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE, 
-MERCHANTABLITY OR NON-INFRINGEMENT. 
-
-*/
+//
+//  Text Battle Royale v0.1
+//  Written by Chris Bartow <chris@codenut.io>
+//  https://github.com/chrisbartow/textbattleroyale
+//
 
 // Import configuration options
 const opts = require('./config.json');
@@ -60,12 +54,11 @@ function onConnectedHandler(addr, port) {
 function onMessageHandler(target, context, msg, self) {
     if (self) { return; } // Ignore messages from the bot
 
-    // console.log(context);
     console.log(target, '<' + context['username'] + '>', msg);
-    const commandName = msg.trim();
+    const cmd = msg.trim();
 
     // !join the game
-    if (commandName.match(/^!join/g) && gameState === 'lobby') {
+    if (/^!join/.test(cmd) && gameState === 'lobby') {
         // Make sure they haven't joined yet
         if (players.findIndex(x => x.id === Number(context['user-id'])) === -1) {
 
@@ -93,7 +86,7 @@ function onMessageHandler(target, context, msg, self) {
     }
 
     // !drop Start the game
-    if (commandName.match(/^!drop/g) && gameState === 'lobby') {
+    if (/^!drop/.test(cmd) && gameState === 'lobby') {
         if (players.length > 1) {
             gameState = "active";
             client.say(target, "The battle begins in 10 seconds... ");
@@ -104,12 +97,12 @@ function onMessageHandler(target, context, msg, self) {
     }
 
     // !br show game info
-    if (commandName.match(/^!br/g)) {
+    if (/^!br/.test(cmd)) {
         client.say(target, `Text BR is a text based version of your favorite last man or woman standing game. Type !join to grab a spot in the next game.`);
     }
 
     // !top show top players
-    if (commandName.match(/^!top/g)) {
+    if (/^!top/.test(cmd)) {
         db.all(`SELECT name, xp FROM players ORDER BY xp DESC LIMIT 10`, [], (err, rows) => {
             if (err) throw err;
             client.say(target, "The top players of Text Battle Royale are: " + rows.map(player => `${player.name} (${player.xp})`).join(', '));
@@ -117,15 +110,15 @@ function onMessageHandler(target, context, msg, self) {
     }
 
     // !stats show stats for player
-    if (commandName.match(/^!stats/g)) {
-        var result = commandName.match(/^!stats *([A-z0-9\-_]*)/);
+    if (/^!stats/.test(cmd)) {
+        var result = cmd.match(/^!stats *([A-z0-9\-_]*)/);
 
         if (result[1])
-            var username = result[1].toLowerCase();
+            var username = result[1];
         else
             var username = context['username'];
 
-        db.all(`SELECT * FROM players WHERE name = ? LIMIT 1`, [username], (err, rows) => {
+        db.all(`SELECT * FROM players WHERE name = ? COLLATE NOCASE`, [username], (err, rows) => {
             if (err) throw err;
             if (rows.length) {
                 client.say(target, `${rows[0]['name']} has earned ${rows[0]['xp']} XP playing in ${rows[0]['games']} games with ${rows[0]['kills']} kills and ${rows[0]['wins']} wins.`);
@@ -152,13 +145,13 @@ function battleroyale(target, notdeadyet) {
     }, []);
 
     // Loop through the array and randomly pick a 'winner'
-    let winners = new Array();
+    let survivers = new Array();
 
     pair.forEach(function(fighters) {
         let winner;
         if (fighters.length > 1) {
             winner = Math.floor((Math.random() * 2));
-            const loser = winner ? 0 : 1;
+            let loser = winner ? 0 : 1;
             // Assign XP when someone loses
             let loserIdx = players.findIndex(x => x.id === fighters[loser].id);
             players[loserIdx].xp += players.length - playersAlive + 1;
@@ -171,18 +164,18 @@ function battleroyale(target, notdeadyet) {
             winner = 0;
         }
         // Assign winning array
-        winners.push(fighters[winner]);
+        survivers.push(fighters[winner]);
     });
 
     // Check to see if there are players left to battle
-    if (winners.length > 1) {
-        client.say(target, "The winnners of this round are: " + winners.map(player => player.name).join(', '));
-        setTimeout(() => battleroyale(target, winners), 5000);
+    if (survivers.length > 1) {
+        client.say(target, "The winnners of this round are: " + survivers.map(player => player.name).join(', '));
+        setTimeout(() => battleroyale(target, survivers), 5000);
     } else {
-        client.say(target, `Winner Winner, Cheesecake Dinner! Congrats ${winners[0].name}.`);
+        client.say(target, `Winner Winner, Cheesecake Dinner! Congrats ${survivers[0].name}.`);
 
         // Assign XP to winner (# of players + 5 bonus xp)
-        let playerIdx = players.findIndex(x => x.id === winners[0].id);
+        let playerIdx = players.findIndex(x => x.id === survivers[0].id);
         players[playerIdx].xp += players.length + 5;
 
         // Add win for player
