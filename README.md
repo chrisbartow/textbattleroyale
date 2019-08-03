@@ -12,7 +12,7 @@ Better details coming soon.
 
 ## Usage
 
-To run, type enter:
+To run, enter the following on a terminal in the project directory:
 
 ```node bot.js```
 
