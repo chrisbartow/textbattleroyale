@@ -109,7 +109,6 @@ function onMessageHandler(target, context, msg, self) {
             if (err) throw err;
             client.say(target, "The top players of Text Battle Royale are: " + rows.map(player => `${player.name} (${player.xp})`).join(', '));
         });
-        saveTopPlayerData();
     }
 
     // !stats show stats for player
@@ -201,48 +200,54 @@ function battleroyale(target, notdeadyet) {
 }
 
 function OverlayServer() {
+
     var fs = require('fs');
     var http = require('http');
+    var path = require('path');
+
     http.createServer(function(req, res) {
+        let url = path.normalize(req.url).replace(/^\//, "");
 
-        fs.readFile('leaderboard.html', 'utf8', async function(err, data) {
-            if (err) {
-                return console.log(err);
-            }
-            // Create HTML Overlay for Top players
-            res.writeHead(200, { 'Content-Type': 'text/html' });
-            let rows = await fetchAllAsync(db, `SELECT name, xp FROM players ORDER BY xp DESC LIMIT 10`);
-            if (rows.length) {
-                data = data.replace(
-                    /%XP_LEADERS%/g,
-                    rows.map(
-                        (player, index) =>
-                        `<li>${index+1}. ${player['name']} <span class="total">${player['xp']}</span></li>`).join("")
-                );
-            }
-            rows = await fetchAllAsync(db, `SELECT name, wins FROM players ORDER BY wins DESC LIMIT 10`);
-            if (rows.length) {
-                data = data.replace(
-                    /%WIN_LEADERS%/g,
-                    rows.map(
-                        (player, index) =>
-                        `<li>${index+1}. ${player['name']} <span class="total">${player['wins']}</span></li>`).join("")
-                );
-            }
-            res.write(data);
+        if (url === "")
+            url = "xp";
+
+        if (url === "xp" || url === "wins") {
+            fs.readFile(`overlay/${url}-leaders.html`, 'utf8', async function(err, html) {
+                if (err) {
+                    return console.log(err);
+                }
+                // Create HTML Overlay for Top players
+
+                db.all(`SELECT name, ${url} FROM players ORDER BY ${url} DESC LIMIT 10`, [], (err, rows) => {
+                    if (err) return err;
+                    if (rows.length) {
+                        res.writeHead(200, { 'Content-Type': 'text/html' });
+                        html = html.replace(
+                            /%LEADERBOARD%/g,
+                            rows.map(
+                                (player, index) =>
+                                `<li>${index+1}. ${player['name']} <span class="total">${player[url]}</span></li>`).join("")
+                        );
+                        res.write(html);
+                        res.end();
+                    }
+                });
+
+            });
+        } else if (url === "style.css") {
+            fs.readFile('overlay/style.css', 'utf8', async function(err, html) {
+                if (err) {
+                    return console.log(err);
+                }
+                res.writeHead(200, { 'Content-Type': 'text/css' });
+                res.write(html);
+                res.end();
+            });
+        } else {
+            res.writeHead(404, { "Content-Type": "text/plain" });
+            res.write("404 Not Found\n");
             res.end();
-
-        });
-
+        }
 
     }).listen(8080);
-}
-
-function fetchAllAsync(db, query, fillers = []) {
-    return new Promise((resolve, reject) => {
-        db.all(query, fillers, (err, rows) => {
-            if (err) return reject(err);
-            return resolve(rows);
-        });
-    });
 }
