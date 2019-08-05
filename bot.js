@@ -1,8 +1,13 @@
+// ----------------------------------------------------------------------------
 //
-//  Text Battle Royale v0.1
-//  Written by Chris Bartow <chris@codenut.io>
-//  https://github.com/chrisbartow/textbattleroyale
+// Text Battle Royale v0.2 - The twitch.tv chat based game 
+// Copyright (C) 2019 Chris Bartow <chris@codenut.io>
+// All rights reserved
 //
+// This source file is licensed under the terms of the MIT license.
+// See the LICENSE file to learn about this license.
+//
+// ----------------------------------------------------------------------------
 
 // Import configuration options
 const opts = require('./config.json');
