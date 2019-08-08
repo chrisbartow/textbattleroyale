@@ -97,8 +97,12 @@ function onMessageHandler(target, context, msg, self) {
     if (/^!bots/i.test(cmd) && gameState === 'lobby') {
         var bots = cmd.match(/^!bots *([0-9\-_]*)/i)[1];
 
-        if (!bots)
+        if (!bots) {
             bots = Math.floor(Math.random() * 10) + 1;
+        } else if (Number(bots) + players.length > 100) {
+            client.say(target, `Too many bots! Abort!`);
+            return;
+        }
 
         var playerName, playerId;
         for (var i = 0; i < bots; i++) {
@@ -135,8 +139,8 @@ function onMessageHandler(target, context, msg, self) {
     if (/^!drop/i.test(cmd) && gameState === 'lobby') {
         if (players.length > 1) {
             gameState = "active";
-            client.say(target, "The battle begins in 10 seconds... ");
-            setTimeout(() => battleroyale(target, players, 1), 10000);
+            client.say(target, "The battle begins in 15 seconds... ");
+            setTimeout(() => battleroyale(target, players, 1), 15000);
         } else {
             client.say(target, "It looks like we don't have enough players. Get your friends to !join.");
         }
