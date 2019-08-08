@@ -9,12 +9,12 @@
 //
 // ----------------------------------------------------------------------------
 
-// Import configuration options
-const opts = require('./config.json');
+// Import Configurations
+const config = require('./config.json');
 
 // Require SQLite Module
-var sqlite3 = require("sqlite3").verbose();
-var db = new sqlite3.Database('db.sqlite');
+var sql = require("sqlite3").verbose();
+var db = new sql.Database('db.sqlite');
 
 // Initialize players table if it does not exist
 db.run(`CREATE TABLE IF NOT EXISTS players (
@@ -32,13 +32,13 @@ db.run(`CREATE TABLE IF NOT EXISTS players (
 const tmi = require('tmi.js');
 
 // Create a chat client
-const client = new tmi.client(opts);
+const client = new tmi.client(config);
 
-// Register our event handlers (defined below)
+// Register event handles for Twitch IRC Chat
 client.on('message', onMessageHandler);
 client.on('connected', onConnectedHandler);
 
-// Connect to Twitch:
+// Connect to Twitch
 client.connect();
 
 // Game State
@@ -50,14 +50,14 @@ var players = new Array();
 // Called every time the bot connects to Twitch chat
 function onConnectedHandler(addr, port) {
     console.log(`Connected to ${addr}:${port}`);
-    if (opts['overlay'])
+    if (config['overlay'])
         OverlayServer();
 }
 
 // Called every time a message comes in
 function onMessageHandler(target, context, msg, self) {
     if (self) { return; } // Ignore messages from the bot
-
+    // console.log(context);
     console.log(target, '<' + context['display-name'] + '>', msg);
     const cmd = msg.trim();
 
@@ -76,16 +76,20 @@ function onMessageHandler(target, context, msg, self) {
             };
 
             // Check to see if player has played before
-            db.all(`SELECT xp, wins, kills, games FROM players WHERE id = ?`, [playerObj['id']], (err, rows) => {
+            db.get(`SELECT xp, wins, kills, games FROM players WHERE id = ?`, [playerObj['id']], (err, result) => {
                 if (err) throw err;
-                if (rows.length) {
-                    Object.assign(playerObj, rows[0]);
+
+                // Load player data from database
+                if (result) {
+                    Object.assign(playerObj, result);
                 }
 
                 players.push(playerObj);
+
                 if (players.length === 1) {
                     client.say(target, `${playerObj['name']} started a new lobby! Type !join to fight for that cheesecake.`);
                 }
+
             });
         }
     }
@@ -132,9 +136,9 @@ function onMessageHandler(target, context, msg, self) {
         if (players.length > 1) {
             gameState = "active";
             client.say(target, "The battle begins in 10 seconds... ");
-            setTimeout(() => battleroyale(target, players), 10000);
+            setTimeout(() => battleroyale(target, players, 1), 10000);
         } else {
-            client.say(target, "It looks like we don't have enough players. NotLikeThis");
+            client.say(target, "It looks like we don't have enough players. Get your friends to !join.");
         }
     }
 
@@ -192,7 +196,7 @@ function onMessageHandler(target, context, msg, self) {
 
 }
 
-function battleroyale(target, notdeadyet) {
+function battleroyale(target, notdeadyet, round) {
 
     // Randomly Sort Active Players
     notdeadyet.sort(() => Math.random() - 0.5);
@@ -231,8 +235,8 @@ function battleroyale(target, notdeadyet) {
 
     // Check to see if there are players left to battle
     if (survivers.length > 1) {
-        client.say(target, "The winnners of this round are: " + survivers.map(player => player.name).join(', '));
-        setTimeout(() => battleroyale(target, survivers), 5000);
+        client.say(target, `The survivors after round #${round} are: ` + survivers.map(player => player.name).join(', '));
+        setTimeout(() => battleroyale(target, survivers, ++round), 5000);
     } else {
         client.say(target, `Winner Winner, Cheesecake Dinner! Congrats ${survivers[0].name}.`);
 
@@ -244,17 +248,17 @@ function battleroyale(target, notdeadyet) {
         players[playerIdx].wins++;
 
         // Write out Player Stats to Database
+
+        var stmt = db.prepare(`REPLACE INTO players(id, name, xp, wins, games, kills) VALUES(?, ?, ?, ?, ?, ?)`);
         players.forEach(function(p) {
             // If it's a bot, don't log it.
             if (isNaN(p.id))
                 return;
             p.games++;
 
-            // TODO: Convert into one Replace statement Array of Array [[],[]]
-            db.run(`REPLACE INTO players(id, name, xp, wins, games, kills) VALUES(?, ?, ?, ?, ?, ?)`, [p.id, p.name, p.xp, p.wins, p.games, p.kills], function(err) {
-                if (err) throw err;
-            });
+            stmt.run(p.id, p.name, p.xp, p.wins, p.games, p.kills);
         });
+        stmt.finalize();
 
         players = new Array();
         // Wait 30 seconds before next game
