@@ -56,3 +56,9 @@ ul>li div.stat {
     display: inline-block;
     width: 40px;
 }
+
+p {
+    text-align: center;
+    color: white;
+    margin: 15px auto 5px auto;
+}
