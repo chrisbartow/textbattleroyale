@@ -6,9 +6,7 @@ Text Battle Royale is a text based chat game for twitch chat that lets user comp
 
 Requires Node.JS, tmi.js, and SQLite Module.
 
-Copy the config-example.json to config.json and update with your bot username, OAuth token, and channel name.
-
-Better details coming soon.
+Copy the config-example.json to config.json and update with your bot username, OAuth token, and channel name. Setting overlay to true will start an http server to show statistics as a stream overlay.
 
 ## Usage
 
